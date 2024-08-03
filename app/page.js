@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { firestore } from "@/firebase";
 import { Box, Modal, Typography, Stack, TextField, Button, Grid } from '@mui/material';
 import { collection, deleteDoc, doc, getDocs, query, getDoc, setDoc } from 'firebase/firestore';
+import { purple } from '@mui/material/colors';
 
 export default function Home() {
   const [inventory, setInventory] = useState([]);
@@ -126,6 +127,7 @@ export default function Home() {
         justifyContent="center"
         alignItems="center"
       >
+        
         <Typography variant="h2" color="#333">
           Inventory Tracker
         </Typography>
@@ -181,7 +183,7 @@ export default function Home() {
         variant="contained"
         onClick={handleOpen}
         sx={{
-          backgroundColor: '#4682b4',
+          backgroundColor: purple,
           width: '200px',
           height: '50px',
           '&:hover': {
