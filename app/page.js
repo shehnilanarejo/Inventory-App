@@ -1,4 +1,4 @@
-'use client'
+'use client';
 import { useState, useEffect } from "react";
 import { firestore } from "@/firebase";
 import { Box, Modal, Typography, Stack, TextField, Button, Grid } from '@mui/material';
@@ -10,34 +10,35 @@ export default function Home() {
   const [inventory, setInventory] = useState([]);
   const [open, setOpen] = useState(false);
   const [itemName, setItemName] = useState('');
-  const [searchQuery, setSearchQuery] = useState(''); // New state for search query
+  const [itemCategory, setItemCategory] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
 
+  // Fetch and update inventory data
   const updateInventory = async () => {
     const snapshot = query(collection(firestore, 'inventory'));
     const docs = await getDocs(snapshot);
-    const inventoryList = [];
-    docs.forEach((doc) => {
-      inventoryList.push({
-        name: doc.id,
-        ...doc.data(),
-      });
-    });
+    const inventoryList = docs.docs.map(doc => ({
+      name: doc.id,
+      ...doc.data(),
+    }));
     setInventory(inventoryList);
   };
 
-  const addItem = async (item) => {
-    const docRef = doc(collection(firestore, 'inventory'), item);
+  // Add new item or update existing item
+  const addItem = async () => {
+    const docRef = doc(collection(firestore, 'inventory'), itemName);
     const docSnap = await getDoc(docRef);
 
     if (docSnap.exists()) {
       const { quantity } = docSnap.data();
-      await setDoc(docRef, { quantity: quantity + 1 });
+      await setDoc(docRef, { quantity: quantity + 1, category: itemCategory });
     } else {
-      await setDoc(docRef, { quantity: 1 });
+      await setDoc(docRef, { quantity: 1, category: itemCategory });
     }
     await updateInventory();
   };
 
+  // Remove item or decrease its quantity
   const removeItem = async (item) => {
     const docRef = doc(collection(firestore, 'inventory'), item);
     const docSnap = await getDoc(docRef);
@@ -57,19 +58,22 @@ export default function Home() {
     updateInventory();
   }, []);
 
+  // Handlers for opening and closing the modal
   const handleOpen = () => setOpen(true);
-  const handleClose = () => setOpen(false);
-
-  const handleSearchChange = (e) => {
-    setSearchQuery(e.target.value);
+  const handleClose = () => {
+    setItemName('');
+    setItemCategory('');
+    setOpen(false);
   };
 
-  // Filter the inventory based on the search query
+  // Handle search input change
+  const handleSearchChange = (e) => setSearchQuery(e.target.value);
+
+  // Filter inventory based on search query
   const filteredInventory = inventory.filter(item =>
     item.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Create a theme to use breakpoints for responsive design
   const theme = createTheme();
 
   return (
@@ -79,14 +83,10 @@ export default function Home() {
         minHeight="100vh"
         display="flex"
         flexDirection="column"
-        justifyContent="center"
-        alignItems="center"
         p={2}
         gap={2}
         sx={{
-          [theme.breakpoints.down('sm')]: {
-            p: '1rem',
-          },
+          p: { xs: '1rem', md: '2rem', lg: '3rem' },
         }}
       >
         <Modal open={open} onClose={handleClose}>
@@ -105,27 +105,30 @@ export default function Home() {
             gap={3}
             sx={{
               transform: 'translate(-50%, -50%)',
-              [theme.breakpoints.down('sm')]: {
-                width: '90%',
-                padding: '1rem',
-              },
+              width: { xs: '90%', md: '70%', lg: '50%' },
+              padding: { xs: '1rem', md: '2rem', lg: '3rem' },
             }}
           >
             <Typography variant="h6">Add Item</Typography>
-            <Stack width="100%" direction="row" spacing={2}>
+            <Stack width="100%" direction="column" spacing={2}>
               <TextField
                 variant="outlined"
                 fullWidth
+                label="Item Name"
                 value={itemName}
-                onChange={(e) => {
-                  setItemName(e.target.value);
-                }}
+                onChange={(e) => setItemName(e.target.value)}
+              />
+              <TextField
+                variant="outlined"
+                fullWidth
+                label="Category"
+                value={itemCategory}
+                onChange={(e) => setItemCategory(e.target.value)}
               />
               <Button
                 variant="outlined"
                 onClick={() => {
-                  addItem(itemName);
-                  setItemName('');
+                  addItem();
                   handleClose();
                 }}
               >
@@ -135,130 +138,97 @@ export default function Home() {
           </Box>
         </Modal>
         <Box
-          width="100%"
-          maxWidth="800px"
-          height="auto"
-          bgcolor="#ADD8E6"
           display="flex"
-          justifyContent="center"
-          alignItems="center"
-          sx={{
-            mb: '2rem', // Space below title
-            p: 2,
-            borderRadius: 1,
-            [theme.breakpoints.down('sm')]: {
-              height: 'auto',
-            },
-          }}
-        >
-          <Typography variant="h2" color="#333" sx={{
-            [theme.breakpoints.down('sm')]: {
-              fontSize: '1.5rem',
-              textAlign: 'center',
-            },
-          }}>
-            Inventory Tracker
-          </Typography>
-        </Box>
-        <Box width="100%" maxWidth="800px" mb={2}>
-          <TextField
-            fullWidth
-            variant="outlined"
-            placeholder="Search items..."
-            value={searchQuery}
-            onChange={handleSearchChange}
-            sx={{
-              mb: '1rem', // Space below search bar
-            }}
-          />
-        </Box>
-        <Box
+          flexDirection="row"
+          gap={2}
           width="100%"
-          maxWidth="800px"
-          maxHeight="450px"
-          overflow="auto"
+          flex={1}
           sx={{
-            [theme.breakpoints.down('sm')]: {
-              maxHeight: 'auto',
-            },
+            flexDirection: { xs: 'column', md: 'row' },
           }}
         >
-          {filteredInventory.map(({ name, quantity }) => (
-            <Grid container key={name} spacing={2} alignItems="center" bgcolor="#f0f0f0" p={2} borderRadius={1} sx={{
-              mb: '1rem', // Space between items
-              [theme.breakpoints.down('sm')]: {
-                flexDirection: 'column',
-                p: 1,
-                gap: 1,
-              },
-            }}>
-              <Grid item xs={12} sm={6}>
-                <Typography variant="h5" color="#333" sx={{
-                  [theme.breakpoints.down('sm')]: {
-                    fontSize: '1rem',
-                    textAlign: 'center',
-                  },
-                }}>
-                  {name.charAt(0).toUpperCase() + name.slice(1)}
-                </Typography>
-              </Grid>
-              <Grid item xs={12} sm={6} display="flex" justifyContent="space-between" sx={{
-                [theme.breakpoints.down('sm')]: {
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  gap: 1,
-                },
+          <Box
+            width="100%"
+            maxWidth="400px"
+            p={2}
+            borderRadius={1}
+            display="flex"
+            flexDirection="column"
+            gap={2}
+            sx={{
+              maxWidth: { xs: '100%', md: '400px' },
+            }}
+          >
+            <Box
+              bgcolor="#ADD8E6"
+              p={2}
+              borderRadius={1}
+              mb={2}
+            >
+              <Typography variant="h4" color="#333" sx={{
+                fontSize: { xs: '1.5rem', md: '2rem', lg: '2.5rem' },
+                textAlign: { xs: 'center', md: 'left' },
               }}>
-                <Typography variant="h5" color="#333" sx={{
-                  [theme.breakpoints.down('sm')]: {
-                    fontSize: '1rem',
-                    textAlign: 'center',
-                  },
-                }}>
-                  Quantity: {quantity}
-                </Typography>
-                <Box display="flex" justifyContent="center" gap={1}>
-                  <Button variant="contained" onClick={() => addItem(name)} sx={{ marginRight: 1 }}>
-                    Add
-                  </Button>
+                Inventory Tracker
+              </Typography>
+            </Box>
+            <TextField
+              fullWidth
+              variant="outlined"
+              placeholder="Search items..."
+              value={searchQuery}
+              onChange={handleSearchChange}
+              sx={{ mb: '1rem' }}
+            />
+            <Button
+              variant="contained"
+              onClick={handleOpen}
+              sx={{
+                backgroundColor: purple[500],
+                width: '100%',
+                height: '50px',
+                mb: '2rem',
+                '&:hover': {
+                  backgroundColor: purple[700],
+                },
+              }}
+            >
+              Add New Items
+            </Button>
+          </Box>
+          <Box
+            flex={1}
+            p={2}
+            sx={{
+              overflowY: 'auto',
+              maxHeight: { xs: 'auto', md: 'calc(100vh - 200px)' },
+            }}
+          >
+            <Typography variant="h2" color="#333" mb={2} sx={{ p: 2, borderRadius: 1 }}>
+              Updated Inventory
+            </Typography>
+            {filteredInventory.map(({ name, quantity }) => (
+              <Grid container key={name} spacing={1} alignItems="center" bgcolor="#f0f0f0" p={2} borderRadius={1} sx={{ mb: '1rem' }}>
+                <Grid item xs={12} sm={6}>
+                  <Typography variant="h6">{name}</Typography>
+                </Grid>
+                <Grid item xs={12} sm={6} container justifyContent="flex-end">
+                  <Typography variant="h6">Quantity: {quantity}</Typography>
                   <Button
-                    variant="contained"
+                    variant="outlined"
+                    color="error"
                     onClick={() => removeItem(name)}
-                    sx={{
-                      backgroundColor: '#b71c1c',
-                      '&:hover': {
-                        backgroundColor: '#c62828',
-                      }
-                    }}
+                    sx={{ ml: 2 }}
                   >
                     Remove
                   </Button>
-                </Box>
+                </Grid>
               </Grid>
-            </Grid>
-          ))}
+            ))}
+          </Box>
         </Box>
-        <Button
-          variant="contained"
-          onClick={handleOpen}
-          sx={{
-            backgroundColor: purple,
-            width: '200px',
-            height: '50px',
-            mt: '2rem', // Space above button
-            '&:hover': {
-              backgroundColor: '#4169e1'
-            },
-            [theme.breakpoints.down('sm')]: {
-              width: '100%',
-              height: 'auto',
-              padding: '1rem',
-            },
-          }}
-        >
-          Add New Items
-        </Button>
       </Box>
     </ThemeProvider>
   );
 }
+
