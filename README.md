@@ -1,3 +1,21 @@
+#Output
+![Screenshot (421)](https://github.com/user-attachments/assets/fdaa7a2f-e2b2-4576-9254-3ce3f51713de)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
 
 ## Getting Started
